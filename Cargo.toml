@@ -5,7 +5,19 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+build = "build.rs"
+
+[build-dependencies]
+embed-resource = "1.7"
+
 [dependencies]
+brotli = "3.3.4"
 dirs = "4.0.0"
-flate2 = "1.0.24"
 md5 = "0.7.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = 'abort'
+strip = true
+#opt-level = 'z' # only have smaller size after strip

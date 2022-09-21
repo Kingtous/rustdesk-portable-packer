@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self},
     io::{Cursor, Read},
     path::PathBuf,
 };
@@ -9,6 +9,7 @@ const BIN_DATA: &[u8] = include_bytes!("../data.bin");
 const LENGTH: usize = 4;
 const IDENTIFIER_LENGTH: usize = 8;
 const MD5_LENGTH: usize = 32;
+const BUF_SIZE: usize = 4096;
 
 pub(crate) struct BinaryData {
     pub md5_code: &'static [u8],
@@ -32,7 +33,7 @@ impl Default for BinaryReader {
 impl BinaryData {
     fn decompress(&self) -> Vec<u8> {
         let cursor = Cursor::new(self.raw);
-        let mut decoder = flate2::read::GzDecoder::new(cursor);
+        let mut decoder = brotli::Decompressor::new(cursor, BUF_SIZE);
         let mut buf = Vec::new();
         decoder.read_to_end(&mut buf).unwrap();
         buf

@@ -5,9 +5,10 @@ import sys
 import optparse
 from hashlib import md5
 import gzip
+import brotli
 
 # file compress level
-compress_level = 9
+compress_level = 11
 # 4GB maximum
 length_count = 4
 # encoding
@@ -26,12 +27,12 @@ def generate_md5_table(folder: str) -> dict:
             md5_generator = md5()
             full_path = os.path.join(root, f)
             print(f"processing {full_path}...")
-            f = open(full_path)
-            content = f.read().encode(encoding=encoding)
-            content_compressed = gzip.compress(
-                content, compresslevel=compress_level)
+            f = open(full_path, "rb")
+            content = f.read()
+            content_compressed = brotli.compress(
+                content, quality=compress_level)
             md5_generator.update(content)
-            md5_code = md5_generator.hexdigest().encode()
+            md5_code = md5_generator.hexdigest().encode(encoding=encoding)
             res[full_path] = (content_compressed, md5_code)
     os.chdir(curdir)
     return res
@@ -61,10 +62,13 @@ def write_metadata(md5_table: dict, output_folder: str, exe: str):
     print(f"metadata had written to {output_path}")
 
 
-def build_portable():
+def build_portable(output_folder: str):
+    os.chdir(output_folder)
     os.system("cargo build --release")
+    os.rename("target/release/rustdesk-portable-packer.exe", "./rustdesk_portable.exe")
 
-# python3 generate.py -f ../rustdesk-portable-packer/test -o . -e ./test/main.py
+# Linux: python3 generate.py -f ../rustdesk-portable-packer/test -o . -e ./test/main.py
+# Windows: python3 .\generate.py -f ..\rustdesk\flutter\build\windows\runner\Debug\ -o . -e ..\rustdesk\flutter\build\windows\runner\Debug\rustdesk.exe
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option("-f", "--folder", dest="folder",
@@ -85,4 +89,4 @@ if __name__ == '__main__':
     print("executable path: " + exe)
     md5_table = generate_md5_table(folder)
     write_metadata(md5_table, output_folder, exe)
-    build_portable()
+    build_portable(output_folder)
